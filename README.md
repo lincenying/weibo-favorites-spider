@@ -1,6 +1,9 @@
-# async-await
-async-await demo
+# 微博收藏夹图片爬虫
 
-npm install
+```bash
+$yarn
+#or
+$npm install
 
-npm run dev
+$npm run dev
+```
