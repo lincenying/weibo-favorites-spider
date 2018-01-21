@@ -1,0 +1,6 @@
+{
+    "extends": "lcy-vue",
+    "rules": {
+        "sort-vars": 0
+    }
+}
