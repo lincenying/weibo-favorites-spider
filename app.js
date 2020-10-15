@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 
 const config = require('./config')
 
@@ -12,6 +12,7 @@ var node = {
     url: require('url'),
     trim: require('locutus/php/strings/trim'),
     strip_tags: require('locutus/php/strings/strip_tags'),
+    mapLimit: require('async/mapLimit')
 }
 
 var colors = require('colors')
@@ -23,12 +24,13 @@ colors.setTheme({
 })
 
 var options = {
-    uri: 'https://m.weibo.cn/api/container/getIndex?containerid='+config.containerid+'&page=',
+    uri: 'https://m.weibo.cn/api/container/getIndex?containerid=' + config.containerid + '&page=',
     headers: {
-        'Referer': 'https://m.weibo.cn/p/index?containerid='+config.containerid+'',
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1',
-        'Cookie': config.cookies,
-        'X-Requested-With': 'XMLHttpRequest',
+        Referer: 'https://m.weibo.cn/p/index?containerid=' + config.containerid + '',
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1',
+        Cookie: config.cookies,
+        'X-Requested-With': 'XMLHttpRequest'
     },
     saveTo: './images',
     startPage: 1,
@@ -45,16 +47,19 @@ var getPage = (item, curPage) => {
         url: options.uri + curPage,
         headers: options.headers
     }
-    return node.rp(rpOptions).then(body => {
-        console.log('下载页面成功：%s'.green, uri)
-        return {
-            curPage,
-            uri,
-            html: body
-        }
-    }).catch(function (err) {
-        console.log(err)
-    })
+    return node
+        .rp(rpOptions)
+        .then(body => {
+            console.log('下载页面成功：%s'.green, uri)
+            return {
+                curPage,
+                uri,
+                html: body
+            }
+        })
+        .catch(function (err) {
+            console.log(err)
+        })
 }
 
 var parseList = page => {
@@ -91,7 +96,7 @@ var makeDir = item => {
                 console.log('目录：%s 已经存在'.red, dir)
                 resolve(item)
             } else {
-                node.mkdirp(dir, function() {
+                node.mkdirp(dir, function () {
                     console.log('目录：%s 创建成功'.green, dir)
                     resolve(item)
                 })
@@ -107,7 +112,7 @@ var writeText = item => {
     var path = node.path
     var dir = path.join(options.saveTo, item.id)
     console.log('准备写入微博内容：%s'.blue, dir)
-    node.fs.writeFileSync(dir + '/content.txt', node.strip_tags(item.text), {flag:'w'})
+    node.fs.writeFileSync(dir + '/content.txt', node.strip_tags(item.text), { flag: 'w' })
     console.log('写入微博内容成功：%s'.green, dir)
 }
 
@@ -117,27 +122,52 @@ var downImage = (imgsrc, dir, page) => {
         var fileName = node.path.basename(url.pathname)
         var toPath = node.path.join(options.saveTo, dir, fileName)
         console.log('开始下载图片：%s，保存到：%s，页数：%s / %s'.blue, fileName, dir, page, options.totalPage)
-        node.fs.exists(toPath, function(exists) {
-            if (exists) {
-                console.log('图片已经存在：%s'.yellow, imgsrc)
-                resolve()
-            } else {
-                node.request.get(encodeURI(imgsrc), {
-                    timeout: 20000
-                }, function(err) {
-                    if (err) {
-                        console.log('图片下载失败, code = ' + err.code + '：%s'.error, imgsrc)
-                        resolve(imgsrc + " => 0")
+        if (node.fs.existsSync(toPath)) {
+            console.log('图片已经存在：%s'.yellow, imgsrc)
+            resolve()
+        } else {
+            node.request
+                .get(
+                    encodeURI(imgsrc),
+                    {
+                        timeout: 20000
+                    },
+                    function (err) {
+                        if (err) {
+                            console.log('图片下载失败, code = ' + err.code + '：%s'.error, imgsrc)
+                            resolve(imgsrc + ' => 0')
+                        }
                     }
-                }).pipe(node.fs.createWriteStream(toPath)).on('close', () => {
+                )
+                .pipe(node.fs.createWriteStream(toPath))
+                .on('close', () => {
                     console.log('图片下载成功：%s'.green, imgsrc)
                     resolve()
-                }).on('error', err => {
+                })
+                .on('error', err => {
                     console.log('图片下载失败：%s'.red, imgsrc)
                     reject(err)
                 })
+        }
+    })
+}
+
+const asyncMapLimit = (imgs, id, page) => {
+    return new Promise(resolve => {
+        node.mapLimit(
+            imgs,
+            options.downLimit,
+            async function (img) {
+                await downImage(img, id, page)
+                return img
+            },
+            err => {
+                if (err) {
+                    console.log(err)
+                }
+                resolve()
             }
-        })
+        )
     })
 }
 
@@ -164,16 +194,9 @@ var init = async () => {
             var item = list.imgList[j]
             await makeDir(item)
             await writeText(item)
-            var length = item.img.length, num = 1, task = []
+            var length = item.img.length
             console.log('开始下载图片, 总数：%s'.blue, length)
-            for (const img of item.img) {
-                task.push(downImage(img, item.id, list.page))
-                if (num % options.downLimit === 0 || num >= length) {
-                    await Promise.all(task)
-                    task = []
-                }
-                num++
-            }
+            await asyncMapLimit(item.img, item.id, list.page)
         }
     }
     console.log(successPage.join(','))
