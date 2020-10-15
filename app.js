@@ -34,8 +34,8 @@ var options = {
     },
     saveTo: './images',
     startPage: 1,
-    // 37532
-    endPage: 100,
+    // 38162-37532
+    endPage: 71,
 
     downLimit: 5,
     totalPage: 0
@@ -97,7 +97,7 @@ var makeDir = item => {
                 console.log('目录：%s 已经存在'.red, dir)
                 resolve(item)
             } else {
-                node.mkdirp(dir, function () {
+                node.mkdirp(dir).then(function () {
                     console.log('目录：%s 创建成功'.green, dir)
                     resolve(item)
                 })
