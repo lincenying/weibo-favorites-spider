@@ -109,6 +109,7 @@ var makeDir = item => {
     })
 }
 
+// eslint-disable-next-line no-unused-vars
 var writeText = item => {
     var path = node.path
     var dir = path.join(options.saveTo, item.user + '/' + item.id)
