@@ -34,7 +34,7 @@ var options = {
     },
     saveTo: './images',
     startPage: 1,
-    // 17452-16458-15137-13831-13453-12232-11727-11289-10784-10166-9927-9393-8715-8485-8346-8241-8096-7806-7347-6644
+    // 37532
     endPage: 100,
 
     downLimit: 5,
@@ -76,7 +76,8 @@ var parseList = page => {
             $return.push({
                 id: item.mblog.mid || item.mblog.id || item.mblog.idstr,
                 img,
-                text: item.mblog.text
+                text: item.mblog.text,
+                user: item.mblog.user.screen_name
             })
         }
     })
@@ -89,7 +90,7 @@ var parseList = page => {
 var makeDir = item => {
     return new Promise(resolve => {
         var path = node.path
-        var dir = path.join(options.saveTo, item.id)
+        var dir = path.join(options.saveTo, item.user + '/' + item.id)
         console.log('准备创建目录：%s'.blue, dir)
         if (item.img.length > 0) {
             if (node.fs.existsSync(dir)) {
@@ -110,7 +111,7 @@ var makeDir = item => {
 
 var writeText = item => {
     var path = node.path
-    var dir = path.join(options.saveTo, item.id)
+    var dir = path.join(options.saveTo, item.user + '/' + item.id)
     console.log('准备写入微博内容：%s'.blue, dir)
     node.fs.writeFileSync(dir + '/content.txt', node.strip_tags(item.text), { flag: 'w' })
     console.log('写入微博内容成功：%s'.green, dir)
@@ -152,13 +153,13 @@ var downImage = (imgsrc, dir, page) => {
     })
 }
 
-const asyncMapLimit = (imgs, id, page) => {
+const asyncMapLimit = (imgs, dir, page) => {
     return new Promise(resolve => {
         node.mapLimit(
             imgs,
             options.downLimit,
             async function (img) {
-                await downImage(img, id, page)
+                await downImage(img, dir, page)
                 return img
             },
             err => {
@@ -193,10 +194,10 @@ var init = async () => {
         for (let j = 0; j < list.imgList.length; j++) {
             var item = list.imgList[j]
             await makeDir(item)
-            await writeText(item)
+            // await writeText(item)
             var length = item.img.length
             console.log('开始下载图片, 总数：%s'.blue, length)
-            await asyncMapLimit(item.img, item.id, list.page)
+            await asyncMapLimit(item.img, item.user + '/' + item.id, list.page)
         }
     }
     console.log(successPage.join(','))
