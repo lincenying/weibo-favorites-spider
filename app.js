@@ -7,8 +7,7 @@ var node = {
     fs: require('fs'),
     mkdirp: require('mkdirp'),
     path: require('path'),
-    request: require('request'),
-    rp: require('request-promise'),
+    axios: require('axios'),
     url: require('url'),
     trim: require('locutus/php/strings/trim'),
     strip_tags: require('locutus/php/strings/strip_tags'),
@@ -48,13 +47,13 @@ var getPage = (item, curPage) => {
         headers: options.headers
     }
     return node
-        .rp(rpOptions)
-        .then(body => {
+        .axios(rpOptions)
+        .then(({ data }) => {
             console.log('下载页面成功：%s'.green, uri)
             return {
                 curPage,
                 uri,
-                html: body
+                html: data
             }
         })
         .catch(function (err) {
@@ -64,7 +63,7 @@ var getPage = (item, curPage) => {
 
 var parseList = page => {
     console.log('开始分析页面数据：%s'.blue, page.uri)
-    var json = JSON.parse(page.html)
+    var json = page.html
     var cards = json.data.cards
     var $return = []
     cards.forEach(item => {
@@ -128,27 +127,25 @@ var downImage = (imgsrc, dir, page) => {
             console.log('图片已经存在：%s'.yellow, imgsrc)
             resolve()
         } else {
-            node.request
-                .get(
-                    encodeURI(imgsrc),
-                    {
-                        timeout: 20000
-                    },
-                    function (err) {
-                        if (err) {
-                            console.log('图片下载失败, code = ' + err.code + '：%s'.error, imgsrc)
-                            resolve(imgsrc + ' => 0')
-                        }
-                    }
-                )
-                .pipe(node.fs.createWriteStream(toPath))
-                .on('close', () => {
-                    console.log('图片下载成功：%s'.green, imgsrc)
-                    resolve()
+            node.axios({
+                method: 'get',
+                url: imgsrc,
+                responseType: 'stream'
+            })
+                .then(({ data }) => {
+                    data.pipe(node.fs.createWriteStream(toPath))
+                        .on('close', () => {
+                            console.log('图片下载成功：%s'.green, imgsrc)
+                            resolve()
+                        })
+                        .on('error', err => {
+                            console.log('图片下载失败：%s'.red, imgsrc)
+                            reject(err)
+                        })
                 })
-                .on('error', err => {
-                    console.log('图片下载失败：%s'.red, imgsrc)
-                    reject(err)
+                .catch(error => {
+                    console.log('图片下载失败, code = ' + error.code + '：%s'.error, imgsrc)
+                    resolve(imgsrc + ' => 0')
                 })
         }
     })
