@@ -96,7 +96,7 @@ var makeDir = item => {
                 console.log('目录：%s 已经存在'.red, dir)
                 resolve(item)
             } else {
-                node.mkdirp(dir).then(function () {
+                node.mkdirp(dir).then(() => {
                     console.log('目录：%s 创建成功'.green, dir)
                     resolve(item)
                 })
@@ -119,7 +119,7 @@ var writeText = item => {
 
 var downImage = (imgsrc, dir, page) => {
     return new Promise((resolve, reject) => {
-        var url = node.url.parse(imgsrc)
+        var url = new node.url.URL(imgsrc)
         var fileName = node.path.basename(url.pathname)
         var toPath = node.path.join(options.saveTo, dir, fileName)
         console.log('开始下载图片：%s，保存到：%s，页数：%s / %s'.blue, fileName, dir, page, options.totalPage)

@@ -10,7 +10,7 @@
     "dependencies": {
         "async": "^3.2.0",
         "axios": "^0.21.1",
-        "cheerio": "^1.0.0-rc.3",
+        "cheerio": "^1.0.0-rc.5",
         "fs": "^0.0.2",
         "locutus": "^2.0.14",
         "mkdirp": "^1.0.4",
