@@ -33,8 +33,8 @@ var options = {
     },
     saveTo: './images',
     startPage: 1,
-    // 38162-37532
-    endPage: 71,
+    // 39270-38910-38162-37532
+    endPage: 36,
 
     downLimit: 5,
     totalPage: 0
@@ -61,25 +61,61 @@ var getPage = (item, curPage) => {
         })
 }
 
-var parseList = page => {
+var getMorePic = mid => {
+    var url = `https://weibo.com/aj/mblog/getover9pic?ajwvr=6&mid=${mid}&__rnd=${new Date().getTime()}`
+    var rpOptions = {
+        url,
+        headers: {
+            Referer: 'https://weibo.com',
+            Cookie: config.webCookies,
+            'X-Requested-With': 'XMLHttpRequest',
+            'User-Agent':
+                'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36'
+        }
+    }
+    return node
+        .axios(rpOptions)
+        .then(({ data }) => {
+            if (data.code === '100000') {
+                return data.data.pids
+            }
+            return []
+        })
+        .catch(function () {})
+}
+
+var parseList = async page => {
     console.log('开始分析页面数据：%s'.blue, page.uri)
     var json = page.html
     var cards = json.data.cards
     var $return = []
-    cards.forEach(item => {
+    var length = cards.length
+    for (let i = 0; i < length; i++) {
+        const item = cards[i]
+        const id = item.mblog.mid || item.mblog.id || item.mblog.idstr
         var img = []
         if (item.mblog.pics && item.mblog.pics.length > 0) {
-            item.mblog.pics.forEach(i => {
-                img.push(i.large.url)
+            // eslint-disable-next-line no-loop-func
+            item.mblog.pics.forEach(jj => {
+                img.push(jj.large.url)
             })
+            if (item.mblog.pic_num > 9) {
+                const more = await getMorePic(id)
+                if (more && more.length > 0) {
+                    // eslint-disable-next-line no-loop-func
+                    more.forEach(ss => {
+                        img.push('https://wx4.sinaimg.cn/large/' + ss + '.jpg')
+                    })
+                }
+            }
             $return.push({
-                id: item.mblog.mid || item.mblog.id || item.mblog.idstr,
+                id,
                 img,
                 text: item.mblog.text,
                 user: item.mblog.user.screen_name
             })
         }
-    })
+    }
     return {
         page: page.curPage,
         imgList: $return
@@ -203,3 +239,4 @@ var init = async () => {
 }
 
 init()
+// getMorePic('4574019242694869')
