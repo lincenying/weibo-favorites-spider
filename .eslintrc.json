@@ -1,6 +1,0 @@
-{
-    "extends": "lcy-js",
-    "rules": {
-        "sort-vars": 0
-    }
-}
