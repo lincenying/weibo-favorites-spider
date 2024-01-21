@@ -11,22 +11,17 @@
   "dependencies": {
     "async": "^3.2.5",
     "axios": "^1.6.5",
-    "cheerio": "^1.0.0-rc.5",
     "locutus": "^2.0.16",
-    "lodash": "^4.17.20",
     "mkdirp": "^3.0.1"
   },
   "devDependencies": {
     "@lincy/eslint-config": "^4.2.5",
     "@types/async": "^3.2.24",
-    "@types/lodash": "^4.14.202",
     "@types/node": "^20.11.5",
-    "axios-socks5-agent": "^1.0.1",
     "colors": "^1.4.0",
     "eslint": "^8.56.0",
     "eslint-plugin-format": "^0.1.0",
     "esno": "^4.0.0",
-    "iconv-lite": "^0.6.2",
     "typescript": "^5.3.3"
   }
 }

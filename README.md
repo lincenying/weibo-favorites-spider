@@ -22,11 +22,11 @@ exports.webCookies = ''
 #### 4. 自行根据需要修改`app.js`里的`startPage`(开始页数)和`endPage`(结束页数)
 
 ```bash
-$pnpm
+pnpm install
 #or
-$npm install
+npm install
 
-$npm run dev
+npm run dev
 #or
-$pnpm dev
+pnpm dev
 ```

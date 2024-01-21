@@ -64,7 +64,7 @@ async function getPage(item: string, curPage: number): Promise<Nullable<PageType
     }
 }
 
-function getMorePic(mid: string): Promise<string[]> {
+async function getMorePic(mid: string): Promise<string[]> {
     const url = `https://weibo.com/aj/mblog/getover9pic?ajwvr=6&mid=${mid}&__rnd=${new Date().getTime()}`
     const rpOptions = {
         url,
@@ -76,16 +76,14 @@ function getMorePic(mid: string): Promise<string[]> {
                 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36',
         },
     }
-    return axios<MorePic>(rpOptions)
-        .then(({ data }) => {
-            if (data.code === '100000')
-                return data.data.pids
-
-            return []
-        })
-        .catch(() => {
-            return []
-        })
+    try {
+        const { data } = await axios<MorePic>(rpOptions)
+        if (data.code === '100000')
+            return data.data.pids
+    }
+    catch (error) {
+    }
+    return []
 }
 
 interface ParseListItem {
